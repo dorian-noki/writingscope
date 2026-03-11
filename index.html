@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>WritingScope</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* =====================
+       CSS変数・リセット
+    ===================== */
+    :root {
+      --bg:         #f0f4f8;
+      --surface:    #ffffff;
+      --surface2:   #e8eef5;
+      --blue-dark:  #0a2540;
+      --blue-mid:   #1565c0;
+      --blue-light: #2196f3;
+      --blue-pale:  #bbdefb;
+      --accent:     #00b0ff;
+      --text:       #0a2540;
+      --text-muted: #546e7a;
+      --border:     #cfd8dc;
+      --highlight:  #e3f2fd;
+      --tag-bg:     #e1f0ff;
+      --radius:     8px;
+      --font-main:  'Noto Sans JP', sans-serif;
+      --font-mono:  'IBM Plex Mono', monospace;
+      --header-h:   52px;
+      --tab-h:      44px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* =====================
+       ヘッダー
+    ===================== */
+    header {
+      background: var(--blue-dark);
+      color: #fff;
+      padding: 0 16px;
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      border-bottom: 2px solid var(--blue-light);
+    }
+
+    .header-title {
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+
+    .header-subtitle {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      font-family: var(--font-mono);
+      margin-left: 8px;
+    }
+
+    /* =====================
+       スマホ用タブナビゲーション
+       （PCでは非表示）
+    ===================== */
+    .tab-nav {
+      display: none; /* PCでは非表示 */
+      background: var(--blue-dark);
+      border-bottom: 1px solid var(--blue-mid);
+      height: var(--tab-h);
+      position: sticky;
+      top: var(--header-h);
+      z-index: 100;
+    }
+
+    .tab-nav-inner {
+      display: flex;
+      height: 100%;
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      font-family: var(--font-main);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      padding: 0 4px;
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-icon { font-size: 14px; }
+
+    /* =====================
+       PC 3カラムレイアウト
+    ===================== */
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr 280px;
+      height: calc(100vh - var(--header-h));
+    }
+
+    /* =====================
+       パネル共通
+    ===================== */
+    .panel {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      /* スマホでのタブ切り替えのため初期表示はブロック */
+    }
+
+    .panel:last-child { border-right: none; }
+
+    .panel-header {
+      padding: 11px 14px 9px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: var(--surface);
+    }
+
+    .panel-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--blue-mid);
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .panel-label::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--blue-light);
+      border-radius: 50%;
+    }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      -webkit-overflow-scrolling: touch; /* iOSのスムーススクロール */
+    }
+
+    /* =====================
+       左パネル：文章入力
+    ===================== */
+    .toggle-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 8px 0;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-family: var(--font-main);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toggle-btn.active {
+      background: var(--blue-mid);
+      color: #fff;
+      border-color: var(--blue-mid);
+    }
+
+    .text-input {
+      width: 100%;
+      height: 150px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
+      font-family: var(--font-main);
+      font-size: 13px;
+      color: var(--text);
+      resize: none;
+      background: var(--surface);
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 8px;
+      line-height: 1.8;
+      /* スマホのズームを防ぐ */
+      font-size: max(16px, 13px);
+    }
+
+    .text-input:focus { border-color: var(--blue-light); }
+
+    .split-btn {
+      width: 100%;
+      padding: 10px;
+      background: var(--blue-mid);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-family: var(--font-main);
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 12px;
+      /* タッチ操作しやすいサイズ */
+      min-height: 44px;
+    }
+
+    .split-btn:hover { background: #0d47a1; }
+    .split-btn:active { background: #0a2f7a; }
+
+    .sentence-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sentence-item {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: var(--text);
+      line-height: 1.7;
+      min-height: 44px; /* タッチしやすいサイズ */
+      display: flex;
+      align-items: center;
+    }
+
+    .sentence-item:hover  { border-color: var(--blue-light); background: var(--highlight); }
+    .sentence-item:active { background: var(--blue-pale); }
+
+    .sentence-item.focused {
+      border-color: var(--blue-light);
+      background: var(--highlight);
+      border-left: 3px solid var(--blue-light);
+    }
+
+    .sentence-idx {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-bottom: 6px;
+    }
+
+    /* =====================
+       中央パネル：AI類似表現
+    ===================== */
+    .focus-display {
+      background: var(--blue-dark);
+      color: #e3f2fd;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--blue-mid);
+      font-size: 13px;
+      line-height: 1.8;
+      flex-shrink: 0;
+    }
+
+    .focus-label {
+      font-size: 10px;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      letter-spacing: 0.1em;
+      margin-bottom: 3px;
+    }
+
+    .generate-btn {
+      padding: 8px 16px;
+      background: var(--accent);
+      color: var(--blue-dark);
+      border: none;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 700;
+      font-family: var(--font-main);
+      cursor: pointer;
+      transition: background 0.2s;
+      min-height: 44px;
+      white-space: nowrap;
+    }
+
+    .generate-btn:hover    { background: #0288d1; color: #fff; }
+    .generate-btn:active   { background: #0277bd; color: #fff; }
+    .generate-btn:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+
+    /* トークン行 */
+    .token-section { margin-bottom: 16px; }
+
+    .token-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-bottom: 8px;
+    }
+
+    .token-row {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+
+    .token-original {
+      padding: 8px 12px;
+      background: var(--surface2);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--blue-dark);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .token-left { display: flex; align-items: center; gap: 8px; }
+
+    .token-type {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    /* リロードボタン */
+    .reload-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      min-width: 28px;
+      min-height: 28px;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .reload-btn:hover { border-color: var(--blue-light); color: var(--blue-light); }
+
+    /* リロードアイコンの回転アニメーション */
+    .reload-btn.spinning .reload-icon {
+      animation: spin 0.5s linear;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .token-alts {
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    /* 類似表現タグ（文脈に合う） */
+    .alt-tag {
+      padding: 6px 12px;
+      background: var(--tag-bg);
+      border: 1px solid var(--blue-pale);
+      color: var(--blue-mid);
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .alt-tag:hover    { background: var(--blue-mid); color: #fff; border-color: var(--blue-mid); }
+    .alt-tag:active   { background: #0d47a1; color: #fff; }
+    .alt-tag.selected { background: var(--blue-light); color: #fff; border-color: var(--blue-light); }
+
+    /* 類似表現タグ（文脈にそぐわない） */
+    .alt-tag.mismatch {
+      background: #fff8e1;
+      border: 1px dashed #ffb300;
+      color: #7c5c00;
+    }
+
+    .alt-tag.mismatch:hover  { background: #ffe082; border-color: #f9a825; color: #4a3500; }
+    .alt-tag.mismatch:active { background: #ffd54f; }
+
+    /* 凡例 */
+    .tag-legend {
+      display: flex;
+      gap: 14px;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-bottom: 10px;
+      padding: 6px 10px;
+      background: var(--surface2);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .tag-legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-dot.match    { background: var(--blue-light); }
+    .legend-dot.mismatch { background: #ffb300; }
+
+    /* =====================
+       AIローディング
+    ===================== */
+    .ai-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 24px 0;
+      justify-content: center;
+    }
+
+    .ai-dots { display: flex; gap: 4px; }
+
+    .ai-dots span {
+      width: 7px; height: 7px;
+      background: var(--blue-light);
+      border-radius: 50%;
+      animation: dotpulse 1.2s infinite;
+    }
+
+    .ai-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .ai-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dotpulse {
+      0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+      40%           { opacity: 1;   transform: scale(1); }
+    }
+
+    /* エラーメッセージ */
+    .error-msg {
+      padding: 10px 12px;
+      background: #fce4ec;
+      border: 1px solid #ef9a9a;
+      border-radius: var(--radius);
+      color: #b71c1c;
+      font-size: 12px;
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    /* 空状態メッセージ */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      color: var(--text-muted);
+      font-size: 12px;
+      text-align: center;
+      gap: 8px;
+      padding: 20px;
+      line-height: 1.9;
+    }
+
+    .empty-icon {
+      font-size: 28px;
+      opacity: 0.4;
+      margin-bottom: 4px;
+    }
+
+    /* =====================
+       右パネル：単語解説・文学文脈
+    ===================== */
+    .selected-tag-display {
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      background: var(--highlight);
+      border: 1px solid var(--blue-pale);
+      border-radius: var(--radius);
+      font-size: 12px;
+      color: var(--blue-mid);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .selected-tag-display .tag-value {
+      font-weight: 700;
+      color: var(--blue-dark);
+    }
+
+    /* 単語解説カード */
+    .word-card {
+      border: 1px solid var(--blue-pale);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .word-card-header {
+      padding: 10px 12px;
+      background: linear-gradient(90deg, var(--blue-mid), var(--blue-light));
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .word-card-header .word-name    { font-size: 18px; font-weight: 700; letter-spacing: 0.05em; }
+    .word-card-header .word-reading { font-size: 11px; color: rgba(255,255,255,0.75); font-family: var(--font-mono); }
+
+    .word-card-body {
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.9;
+      background: var(--surface);
+    }
+
+    .word-pos-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      background: var(--tag-bg);
+      color: var(--blue-mid);
+      border: 1px solid var(--blue-pale);
+      border-radius: 4px;
+      padding: 1px 7px;
+      margin-bottom: 6px;
+    }
+
+    .word-definition { color: var(--text); margin-bottom: 8px; }
+
+    .word-nuance {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--surface2);
+      border-left: 3px solid var(--blue-light);
+      padding: 6px 10px;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* セクションラベル */
+    .right-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin: 14px 0 8px;
+    }
+
+    /* 文学文脈カード */
+    .context-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .context-card-header {
+      padding: 8px 12px;
+      background: var(--blue-dark);
+      color: #e3f2fd;
+    }
+
+    .context-card-header .work-title  { font-weight: 700; font-size: 12px; color: #fff; }
+    .context-card-header .work-author { color: var(--accent); font-size: 10px; font-family: var(--font-mono); }
+
+    .context-card-body {
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.9;
+      color: var(--text);
+    }
+
+    .context-card-body .match-word {
+      background: var(--blue-pale);
+      border-radius: 3px;
+      padding: 0 3px;
+      font-weight: 700;
+      color: var(--blue-dark);
+    }
+
+    /* =====================
+       スクロールバー
+    ===================== */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--blue-light); }
+
+    /* =====================
+       スマホ対応（768px以下）
+    ===================== */
+    @media (max-width: 768px) {
+      /* タブナビを表示する */
+      .tab-nav { display: block; }
+
+      /* 3カラムを1カラムに切り替え */
+      .layout {
+        grid-template-columns: 1fr;
+        height: calc(100vh - var(--header-h) - var(--tab-h));
+        overflow: hidden;
+      }
+
+      /* 全パネルを非表示にしてタブで切り替える */
+      .panel {
+        display: none;
+        height: calc(100vh - var(--header-h) - var(--tab-h));
+      }
+
+      /* アクティブなパネルのみ表示 */
+      .panel.tab-active { display: flex; }
+
+      /* テキストエリアを大きく */
+      .text-input { height: 180px; }
+
+      /* フォーカス文は省略表示 */
+      .focus-display {
+        font-size: 12px;
+        max-height: 70px;
+        overflow: hidden;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== ヘッダー ===== -->
+<header>
+  <div>
+    <span class="header-title">WritingScope</span>
+    <span class="header-subtitle">文章推敲支援</span>
+  </div>
+</header>
+
+<!-- ===== スマホ用タブナビ ===== -->
+<nav class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="switchTab(0)">
+      <span class="tab-icon">✏️</span>
+      <span>文章入力</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab(1)">
+      <span class="tab-icon">🔍</span>
+      <span>類似表現</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab(2)">
+      <span class="tab-icon">📖</span>
+      <span>解説・文脈</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ===== メインレイアウト ===== -->
+<div class="layout">
+
+  <!-- ===== 左パネル：文章入力 ===== -->
+  <div class="panel tab-active" id="panel0">
+    <div class="panel-header">
+      <span class="panel-label">① 文章入力</span>
+    </div>
+    <div class="panel-body">
+
+      <!-- 演習フォーム / 文章選択 切り替え -->
+      <div class="toggle-row">
+        <button class="toggle-btn active" id="btnForm"   onclick="switchMode('form')">✏️ 演習フォーム</button>
+        <button class="toggle-btn"        id="btnSelect" onclick="switchMode('select')">≡ 文章選択</button>
+      </div>
+
+      <!-- テキストエリア（演習フォーム） -->
+      <div id="formMode">
+        <textarea
+          id="mainText"
+          class="text-input"
+          placeholder="執筆中の文章をここにペーストしてください。"
+        >夜が静かに更けていく。窓の外には、うっすらと雪が降り積もっていた。彼女はその白い景色をただ眺めながら、言葉を探していた。だが、うまく見つからない。心の中に渦巻く感情は、あまりにも複雑で、言語化するには程遠かった。</textarea>
+        <button class="split-btn" onclick="splitText()">② 文章を分割する →</button>
+      </div>
+
+      <!-- 分割された文のリスト -->
+      <div class="sentence-idx" id="sentenceCount" style="display:none;"></div>
+      <div class="sentence-list" id="sentenceList"></div>
+
+    </div>
+  </div>
+
+  <!-- ===== 中央パネル：AI類似表現 ===== -->
+  <div class="panel" id="panel1" style="border-right:1px solid var(--border);">
+
+    <!-- フォーカス中の文を表示 -->
+    <div class="focus-display" id="focusDisplay">
+      <div class="focus-label">③ フォーカス中の文</div>
+      <span id="focusText" style="color:#90caf9;">← 左の文をクリックして選択</span>
+    </div>
+
+    <div class="panel-header">
+      <span class="panel-label">④ AI類似表現</span>
+      <button class="generate-btn" id="generateBtn" onclick="generateAlternatives()" disabled>
+        生成する
+      </button>
+    </div>
+
+    <div class="panel-body" id="centerBody">
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        文を選択して「生成する」を<br>押すとAIが類似表現を提案します。
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 右パネル：単語解説・文学文脈 ===== -->
+  <div class="panel" id="panel2" style="border-right:none;">
+    <div class="panel-header">
+      <span class="panel-label">⑤ 単語解説・文脈</span>
+    </div>
+    <div class="panel-body" id="rightBody">
+      <div class="empty-state">
+        <div class="empty-icon">📖</div>
+        類似表現タグをクリックすると<br>単語解説と文学作品の<br>文脈が表示されます。
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // =====================
+  //   設定：Gemini APIキー
+  //   ここに自分のAPIキーを入力してください
+  // =====================
+  const GEMINI_API_KEY = 'AIzaSyDfNxPuOGLy5TB6svHVpA4PNtJZbvX6BJE';
+
+  // Gemini APIのエンドポイント
+  const GEMINI_URL =
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+  // =====================
+  //   状態管理
+  // =====================
+  let sentences    = [];   // 分割された文のリスト
+  let focusedIndex = -1;   // フォーカス中の文インデックス
+  let currentMode  = 'form'; // 'form' | 'select'
+  let currentTab   = 0;    // スマホ用タブのインデックス
+
+  // =====================
+  //   スマホ：タブ切り替え
+  // =====================
+  function switchTab(idx) {
+    currentTab = idx;
+
+    // タブボタンのアクティブ状態を更新
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+      btn.classList.toggle('active', i === idx);
+    });
+
+    // パネルの表示切り替え
+    document.querySelectorAll('.panel').forEach((panel, i) => {
+      panel.classList.toggle('tab-active', i === idx);
+    });
+  }
+
+  // =====================
+  //   モード切り替え（演習フォーム↔文章選択）
+  // =====================
+  function switchMode(mode) {
+    currentMode = mode;
+    document.getElementById('btnForm').classList.toggle('active', mode === 'form');
+    document.getElementById('btnSelect').classList.toggle('active', mode === 'select');
+    document.getElementById('formMode').style.display = mode === 'form' ? '' : 'none';
+  }
+
+  // =====================
+  //   ② 文章を「。」または改行で分割する
+  // =====================
+  function splitText() {
+    const raw = document.getElementById('mainText').value.trim();
+    if (!raw) return;
+
+    // 「。」「！」「？」で分割し空文字を除去
+    sentences = raw
+      .split(/[。！？\n]/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0)
+      .map(s => s + '。');
+
+    renderSentenceList();
+
+    // 分割後は文章選択モードに切り替え
+    switchMode('select');
+  }
+
+  // =====================
+  //   文のリストをレンダリング
+  // =====================
+  function renderSentenceList() {
+    const list  = document.getElementById('sentenceList');
+    const count = document.getElementById('sentenceCount');
+
+    count.style.display = '';
+    count.textContent   = `02  /  ${sentences.length} 文に分割`;
+
+    list.innerHTML = sentences.map((s, i) => `
+      <div
+        class="sentence-item${i === focusedIndex ? ' focused' : ''}"
+        onclick="focusSentence(${i})"
+      >${s}</div>
+    `).join('');
+  }
+
+  // =====================
+  //   ③ 文をフォーカスする
+  // =====================
+  function focusSentence(i) {
+    focusedIndex = i;
+
+    // フォーカス表示を更新
+    const ft = document.getElementById('focusText');
+    ft.style.color   = '#fff';
+    ft.textContent   = sentences[i];
+
+    // リスト再レンダリング
+    renderSentenceList();
+
+    // 生成ボタンを有効化（APIキーが設定されていれば）
+    document.getElementById('generateBtn').disabled = (GEMINI_API_KEY === 'YOUR_API_KEY_HERE');
+
+    // 中央パネルを空状態に戻す
+    document.getElementById('centerBody').innerHTML =
+      `<div class="empty-state"><div class="empty-icon">🔍</div>「生成する」を押してください。</div>`;
+
+    // スマホでは類似表現タブに自動切り替え
+    if (window.innerWidth <= 768) switchTab(1);
+  }
+
+  // =====================
+  //   Gemini APIを呼び出す共通関数
+  // =====================
+  async function callGemini(prompt) {
+    const res = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const raw  = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    // コードブロックを除去してJSONをパース
+    return JSON.parse(raw.replace(/```json|```/g, '').trim());
+  }
+
+  // =====================
+  //   ④ 「生成する」ボタン押下：類似表現を生成
+  // =====================
+  async function generateAlternatives() {
+    if (focusedIndex < 0) { alert('文を選択してください。'); return; }
+
+    const sentence = sentences[focusedIndex];
+    const body     = document.getElementById('centerBody');
+
+    // ローディング表示
+    body.innerHTML = `
+      <div class="ai-loading">
+        <div class="ai-dots"><span></span><span></span><span></span></div>
+        <span>AIが解析中…</span>
+      </div>`;
+
+    // Geminiへのプロンプト：品詞分解＋類似表現をJSONで要求
+    const prompt = `
+以下の日本語の文を品詞ごとに分解し、各品詞の類似表現を提案してください。
+
+文：「${sentence}」
+
+以下のJSON形式のみで返答してください（マークダウンや説明文は不要）：
+{
+  "tokens": [
+    {
+      "word": "元の単語",
+      "type": "品詞名（例：名詞、動詞、形容詞、副詞、助動詞など）",
+      "alts": [
+        { "word": "類似表現1", "mismatch": false },
+        { "word": "類似表現2", "mismatch": false },
+        { "word": "雰囲気にそぐわない表現", "mismatch": true }
+      ]
+    }
+  ]
+}
+
+条件：
+- 機能語（は・が・を・に・と・の など）は除外してOK
+- 各トークンにつき類似表現を3〜5個
+- mismatch:true は意味は近いが文体・雰囲気にそぐわないもの（和語の文に漢語を混ぜる等）
+- 必ずJSONのみ返すこと
+`;
+
+    try {
+      const parsed = await callGemini(prompt);
+      renderTokens(parsed.tokens, sentence);
+    } catch (e) {
+      body.innerHTML = `<div class="error-msg">⚠️ エラーが発生しました。<br>APIキーを確認してください。<br><small>${e.message}</small></div>`;
+    }
+  }
+
+  // =====================
+  //   トークン行を描画する
+  // =====================
+  function renderTokens(tokens, sentence) {
+    const body = document.getElementById('centerBody');
+
+    // 凡例
+    let html = `
+      <div class="tag-legend">
+        <div class="tag-legend-item"><div class="legend-dot match"></div><span>文脈に合う</span></div>
+        <div class="tag-legend-item"><div class="legend-dot mismatch"></div><span>雰囲気にそぐわない</span></div>
+      </div>
+      <div class="token-section">
+        <div class="token-section-label">言い換え候補</div>
+    `;
+
+    // 各トークンの行を生成
+    tokens.forEach((token, idx) => {
+      const altTags = token.alts.map(a => `
+        <span
+          class="alt-tag${a.mismatch ? ' mismatch' : ''}"
+          onclick="selectTag(this, '${a.word.replace(/'/g, "\\'")}', '${sentence.replace(/'/g, "\\'")}')"
+          title="${a.mismatch ? '雰囲気にそぐわない可能性あり' : ''}"
+        >${a.word}</span>
+      `).join('');
+
+      // リロードボタン（タップ後に再生成）
+      const reloadBtn = `
+        <button class="reload-btn" onclick="reloadToken(this, ${idx}, '${sentence.replace(/'/g, "\\'")}')" title="候補を再生成">
+          <svg class="reload-icon" width="13" height="13" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+        </button>
+      `;
+
+      html += `
+        <div class="token-row" id="token-row-${idx}">
+          <div class="token-original">
+            <div class="token-left">
+              <span>${token.word}</span>
+              <span class="token-type">${token.type}</span>
+            </div>
+            ${reloadBtn}
+          </div>
+          <div class="token-alts" id="token-alts-${idx}">${altTags}</div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    body.innerHTML = html;
+
+    // トークンデータを保持しておく（リロード用）
+    body.dataset.tokens   = JSON.stringify(tokens);
+    body.dataset.sentence = sentence;
+  }
+
+  // =====================
+  //   リロードボタン：1トークンだけ再生成
+  // =====================
+  async function reloadToken(btn, tokenIdx, sentence) {
+    if (btn.classList.contains('spinning')) return;
+
+    // 回転アニメ開始
+    btn.classList.add('spinning');
+
+    // 現在のトークン情報を取得
+    const body      = document.getElementById('centerBody');
+    const tokens    = JSON.parse(body.dataset.tokens || '[]');
+    const token     = tokens[tokenIdx];
+    if (!token) { btn.classList.remove('spinning'); return; }
+
+    // アニメ終了後にAPI呼び出し
+    btn.addEventListener('animationend', async function handler() {
+      btn.classList.remove('spinning');
+      btn.removeEventListener('animationend', handler);
+
+      // このトークンだけ再生成するプロンプト
+      const prompt = `
+日本語の単語「${token.word}」（${token.type}）の類似表現を提案してください。
+文の文脈：「${sentence}」
+
+以下のJSON形式のみで返答してください（マークダウン・説明文不要）：
+{
+  "alts": [
+    { "word": "類似表現1", "mismatch": false },
+    { "word": "類似表現2", "mismatch": false },
+    { "word": "雰囲気にそぐわない表現", "mismatch": true }
+  ]
+}
+
+条件：
+- 3〜5個
+- mismatch:true は文体・雰囲気にそぐわないもの
+- JSONのみ返すこと
+`;
+
+      try {
+        const parsed  = await callGemini(prompt);
+        const altsDiv = document.getElementById(`token-alts-${tokenIdx}`);
+        if (!altsDiv) return;
+
+        // 新しいタグを描画
+        altsDiv.innerHTML = parsed.alts.map(a => `
+          <span
+            class="alt-tag${a.mismatch ? ' mismatch' : ''}"
+            onclick="selectTag(this, '${a.word.replace(/'/g, "\\'")}', '${sentence.replace(/'/g, "\\'")}')"
+          >${a.word}</span>
+        `).join('');
+
+        // トークンデータを更新
+        tokens[tokenIdx].alts = parsed.alts;
+        body.dataset.tokens   = JSON.stringify(tokens);
+
+        // フェードインで更新を演出
+        altsDiv.style.opacity    = '0';
+        altsDiv.style.transition = 'opacity 0.25s';
+        requestAnimationFrame(() => { altsDiv.style.opacity = '1'; });
+
+      } catch (e) {
+        console.error('リロードエラー:', e);
+      }
+
+    }, { once: true });
+  }
+
+  // =====================
+  //   ⑤ タグをクリック：単語解説＋文学文脈を表示
+  // =====================
+  async function selectTag(el, word, sentence) {
+    // 選択状態のトグル
+    const wasSelected = el.classList.contains('selected');
+    document.querySelectorAll('.alt-tag.selected').forEach(t => t.classList.remove('selected'));
+    if (!wasSelected) el.classList.add('selected');
+
+    const right = document.getElementById('rightBody');
+
+    // ローディング表示
+    right.innerHTML = `
+      <div class="selected-tag-display">
+        <span>選択中：</span><span class="tag-value">「${word}」</span>
+      </div>
+      <div class="ai-loading">
+        <div class="ai-dots"><span></span><span></span><span></span></div>
+        <span>単語解説を生成中…</span>
+      </div>
+    `;
+
+    // スマホでは解説タブに自動切り替え
+    if (window.innerWidth <= 768) switchTab(2);
+
+    // Geminiに単語解説をJSON形式で依頼するプロンプト
+    const prompt = `
+日本語の単語「${word}」について推敲支援の観点で解説してください。
+文の文脈：「${sentence}」
+
+以下のJSON形式のみで返してください（マークダウン・説明文不要）：
+{
+  "word":       "${word}",
+  "reading":    "よみがな（ひらがな）",
+  "pos":        "品詞",
+  "definition": "意味の説明（1〜2文）",
+  "nuance":     "文学・小説での使い方のニュアンスや注意点（1〜2文）"
+}
+`;
+
+    try {
+      const info = await callGemini(prompt);
+
+      // 単語解説カード
+      const wordCardHtml = `
+        <div class="right-section-label">単語解説</div>
+        <div class="word-card">
+          <div class="word-card-header">
+            <span class="word-name">${info.word}</span>
+            <span class="word-reading">${info.reading}</span>
+          </div>
+          <div class="word-card-body">
+            <span class="word-pos-badge">${info.pos}</span>
+            <div class="word-definition">${info.definition}</div>
+            <div class="word-nuance">📝 ${info.nuance}</div>
+          </div>
+        </div>
+      `;
+
+      // ダミーの文学文脈カード（青空文庫連携は今後の拡張）
+      const contextHtml = `
+        <div class="right-section-label">文学作品での文脈（例）</div>
+        <div class="context-card">
+          <div class="context-card-header">
+            <div class="work-title">夜の底で</div>
+            <div class="work-author">桐島 芳乃  /  1962</div>
+          </div>
+          <div class="context-card-body">
+            …灯台の光が遠く弧を描くたびに、波音だけが室内に滲みてきた。美津子は濡れた窓硝子を<span class="match-word">${word}</span>、返事のかわりに煙草の煙をゆっくりと吐き出した…
+          </div>
+        </div>
+        <div class="context-card">
+          <div class="context-card-header">
+            <div class="work-title">霧の午後</div>
+            <div class="work-author">永瀬 一郎  /  1978</div>
+          </div>
+          <div class="context-card-body">
+            …男は折り畳んだ新聞を膝の上に置いたまま、プラットホームの向こうに消えていく列車の尾灯を<span class="match-word">${word}</span>、何かを数えるように唇を動かしていた…
+          </div>
+        </div>
+        <div class="context-card">
+          <div class="context-card-header">
+            <div class="work-title">透明な午前</div>
+            <div class="work-author">日向 澄子  /  2001</div>
+          </div>
+          <div class="context-card-body">
+            …彼女はコーヒーカップを両手で包んだまま、中庭に落ちる雨粒を<span class="match-word">${word}</span>、昨夜の会話の断片を拾い集めようとしていた…
+          </div>
+        </div>
+      `;
+
+      // 右パネルに描画
+      right.innerHTML = `
+        <div class="selected-tag-display">
+          <span>選択中：</span><span class="tag-value">「${word}」</span>
+        </div>
+        ${wordCardHtml}
+        ${contextHtml}
+      `;
+
+    } catch (e) {
+      // エラー時はダミーだけ表示
+      right.innerHTML = `
+        <div class="selected-tag-display">
+          <span>選択中：</span><span class="tag-value">「${word}」</span>
+        </div>
+        <div class="error-msg">⚠️ 解説の取得に失敗しました。<br><small>${e.message}</small></div>
+        <div class="right-section-label">文学作品での文脈（例）</div>
+        <div class="context-card">
+          <div class="context-card-header">
+            <div class="work-title">夜の底で</div>
+            <div class="work-author">桐島 芳乃  /  1962</div>
+          </div>
+          <div class="context-card-body">
+            …美津子は濡れた窓硝子を<span class="match-word">${word}</span>、返事のかわりに煙草の煙をゆっくりと吐き出した…
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // =====================
+  //   テキストエリア変更時：リセット
+  // =====================
+  document.getElementById('mainText').addEventListener('input', () => {
+    sentences    = [];
+    focusedIndex = -1;
+    document.getElementById('sentenceList').innerHTML       = '';
+    document.getElementById('sentenceCount').style.display = 'none';
+    document.getElementById('focusText').textContent        = '← 左の文をクリックして選択';
+    document.getElementById('focusText').style.color        = '#90caf9';
+    document.getElementById('generateBtn').disabled         = true;
+    document.getElementById('centerBody').innerHTML         =
+      `<div class="empty-state"><div class="empty-icon">🔍</div>文を選択して「生成する」を押してください。</div>`;
+  });
+
+  // =====================
+  //   起動時：APIキー未設定の警告
+  // =====================
+  window.addEventListener('DOMContentLoaded', () => {
+    if (GEMINI_API_KEY === 'YOUR_API_KEY_HERE') {
+      const banner = document.createElement('div');
+      banner.style.cssText =
+        'background:#fff3e0;border-bottom:1px solid #ffb300;padding:8px 16px;font-size:12px;color:#7c5c00;text-align:center;';
+      banner.textContent = '⚠️ APIキーが設定されていません。HTMLファイルの GEMINI_API_KEY を書き換えてください。';
+      document.body.insertBefore(banner, document.querySelector('.tab-nav') || document.querySelector('.layout'));
+    }
+  });
+</script>
+</body>
+</html>
